@@ -37,8 +37,8 @@ def visualize_gantt(
     pyo.plot(fig, filename=filename, auto_open=auto_open)
 
 if __name__ == "__main__":
-    from data.example_data import get_example_data
-    from models.lp_model import solve_scheduling_problem
+    from src.data.example_data import get_example_data
+    from src.models.lp_model import solve_scheduling_problem
     machines, tasks = get_example_data()
     schedule = solve_scheduling_problem(machines, tasks)
     if isinstance(schedule, dict):

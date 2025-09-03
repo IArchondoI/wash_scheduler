@@ -1,5 +1,6 @@
-from models.lp_model import solve_scheduling_problem
-from data.example_data import get_example_data
+
+from src.models.lp_model import solve_scheduling_problem
+from src.data.example_data import get_example_data
 
 if __name__ == "__main__":
     machines, tasks = get_example_data()
