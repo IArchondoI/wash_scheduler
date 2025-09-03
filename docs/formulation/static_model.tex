@@ -1,0 +1,51 @@
+% Dry Clean Task Scheduling Model (Static Version)
+% Last updated: September 3, 2025
+
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\begin{document}
+
+\section*{Dry Clean Task Scheduling Model (Static Version)}
+
+\subsection*{Sets}
+\begin{itemize}
+    \item $T$ : Set of tasks, indexed by $i$
+    \item $M$ : Set of washing machines, indexed by $j$
+    \item $K$ : Set of machine types, indexed by $k$
+    \item $M_k$ : Set of machines of type $k$
+\end{itemize}
+
+\subsection*{Parameters}
+\begin{itemize}
+    \item $a_i$ : Arrival time of task $i$
+    \item $l_i$ : Length (duration) of task $i$
+    \item $d_i$ : Due time of task $i$
+    \item $r_i$ : Number of machines required for task $i$
+    \item $k_i$ : Required machine type for task $i$
+\end{itemize}
+
+\subsection*{Decision Variables}
+\begin{itemize}
+    \item $s_i$ : Start time of task $i$
+    \item $e_i$ : End time of task $i$ ($e_i = s_i + l_i$)
+    \item $late_i \geq 0$ : Lateness of task $i$ ($late_i = \max(0, e_i - d_i)$)
+    \item $x_{ij} \in \{0,1\}$ : 1 if task $i$ is assigned to machine $j$, 0 otherwise
+\end{itemize}
+
+\subsection*{Model}
+\begin{align*}
+\text{Minimize} \quad & \sum_{i \in T} late_i \\
+\text{Subject to:} \\
+& s_i \geq a_i && \forall i \in T \\
+& e_i = s_i + l_i && \forall i \in T \\
+& late_i \geq e_i - d_i && \forall i \in T \\
+& late_i \geq 0 && \forall i \in T \\
+& \sum_{j \in M_{k_i}} x_{ij} = r_i && \forall i \in T \\
+& \text{No overlap:} \\
+& \quad \text{For all } j \in M, \text{tasks } i, i' \text{ with } x_{ij} = x_{i'j} = 1, \\
+& \qquad [s_i, e_i) \cap [s_{i'}, e_{i'}) = \emptyset \text{ if } i \neq i' \\
+& x_{ij} \in \{0,1\} && \forall i \in T, j \in M_{k_i}
+\end{align*}
+
+\end{document}
