@@ -52,3 +52,5 @@ coverage.xml
 # Ignore all HTML files (Gantt chart outputs)
 *.html
 src/requirements.txt
+do_not_commit.py
+**/do_not_commit.py
