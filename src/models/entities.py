@@ -1,8 +1,27 @@
 
-
 import uuid
+from dataclasses import dataclass
 from enum import Enum
+from ortools.sat.python.cp_model import IntVar
 from pydantic import BaseModel
+from typing import Dict, List
+
+@dataclass
+class ModelVariables:
+    start_vars: Dict[str, IntVar]
+    end_vars: Dict[str, IntVar]
+    late_vars: Dict[str, IntVar]
+    assigned_vars: Dict[str, List[IntVar]]  # Use IntVar for bools
+    machines: List['WashingMachine']
+    tasks: List['Task']
+
+# Context dataclass to hold all info for a run
+@dataclass
+class Context:
+    machines: List['WashingMachine']
+    tasks: List['Task']
+
+
 
 
 class MachineType(str, Enum):
