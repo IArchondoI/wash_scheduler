@@ -25,12 +25,12 @@ def create_scheduling_model(
     if hasattr(context, 'horizon') and context.horizon is not None:
         horizon = context.horizon
     else:
-        horizon = max(t.due_time for t in tasks) + max(t.length for t in tasks)
+        horizon = max(t.due_time for t in tasks) + max(int(t.length.value) for t in tasks)
     for t in tasks:
         start = model.NewIntVar(t.arrival_time, horizon, f"start_{t.id}")
         end = model.NewIntVar(t.arrival_time, horizon, f"end_{t.id}")
         late = model.NewIntVar(0, horizon, f"late_{t.id}")
-        model.Add(end == start + t.length)
+        model.Add(end == start + int(t.length.value))
         model.Add(late >= end - t.due_time)
         model.Add(late >= 0)
         model.Add(end <= horizon)  # Enforce that no task ends after the horizon
@@ -42,7 +42,7 @@ def create_scheduling_model(
             if m.type == t.required_type:
                 assigned = model.NewBoolVar(f"assigned_{t.id}_{m.id}")
                 interval = model.NewOptionalIntervalVar(
-                    start, t.length, end, assigned, f"interval_{t.id}_{m.id}"
+                    start, int(t.length.value), end, assigned, f"interval_{t.id}_{m.id}"
                 )
                 intervals_by_machine[m.id].append(interval)
                 assigned_vars[t.id].append(assigned)

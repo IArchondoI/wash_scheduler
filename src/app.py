@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import streamlit as st
-from src.models.entities import WashingMachine, Task, Context, MachineType
+from src.models.entities import WashingMachine, Task, Context, MachineType, TaskLengthCategory, DueDateCategory
 from src.models.lp_model import solve_scheduling_problem
 import plotly.figure_factory as ff
 from datetime import datetime, timedelta
@@ -42,23 +42,47 @@ if "tasks" not in st.session_state:
 with st.form("add_task_form"):
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        arrival_time = st.number_input("Arrival (h)", min_value=0, value=0)
+        horizon_hours = int(st.session_state["num_days"]) * 24
+        arrival_time = st.selectbox(
+            "Arrival (h)",
+            options=list(range(horizon_hours)),
+            index=0,
+            format_func=lambda h: (datetime(2025, 1, 1) + timedelta(hours=h)).strftime("%b %d %H:%M")
+        )
     with col2:
-        length = st.number_input("Length (h)", min_value=1, value=2)
+        tshirt_sizes = [(cat.name, cat.value) for cat in TaskLengthCategory]
+        length = st.selectbox(
+            "Length (T-shirt size)",
+            options=list(TaskLengthCategory),
+            format_func=lambda c: f"{c.name} ({c.value}h)"
+        )
     with col3:
         required_type = st.selectbox("Type", machine_types, index=0)
     with col4:
         required_count = st.number_input("# Machines", min_value=1, value=1)
     with col5:
-        due_time = st.number_input("Due (h)", min_value=1, value=4)
+        due_category = st.selectbox(
+            "Due Date",
+            options=list(DueDateCategory),
+            format_func=lambda c: {DueDateCategory.H12: "12h", DueDateCategory.H24: "24h", DueDateCategory.WEEK: "1 week"}[c]
+        )
     submitted = st.form_submit_button("Add Task")
     if submitted:
+        # Map due category to due_time in hours
+        if due_category == DueDateCategory.H12:
+            due_time = arrival_time + 12
+        elif due_category == DueDateCategory.H24:
+            due_time = arrival_time + 24
+        else:
+            due_time = arrival_time + 7 * 24
+        due_time = min(due_time, horizon_hours - 1)
         t = Task(
             id=f"T{len(st.session_state['tasks'])+1}",
             arrival_time=arrival_time,
             length=length,
             required_type=MachineType(required_type),
             required_count=required_count,
+            due=due_category,
             due_time=due_time,
         )
         st.session_state["tasks"].append(t)
@@ -68,7 +92,7 @@ if st.button("Clear Tasks"):
 
 st.write("### Current Tasks")
 for t in st.session_state["tasks"]:
-    st.write(f"{t.id}: Arrive {t.arrival_time}h, Length {t.length}h, Type {t.required_type.value}, # {t.required_count}, Due {t.due_time}h")
+    st.write(f"{t.id}: Arrive {t.arrival_time}h, Length {t.length.name} ({t.length.value}h), Type {t.required_type.value}, # {t.required_count}, Due {t.due.name} ({t.due_time}h)")
 
 # Optimize and visualize
 if st.button("Optimize & Visualize"):
@@ -120,10 +144,10 @@ if st.button("Optimize & Visualize"):
                 table_data.append({
                     "TaskID": t.id,
                     "Arrival": t.arrival_time,
-                    "Length": t.length,
+                    "Length": f"{t.length.name} ({t.length.value}h)",
                     "Type": t.required_type.value,
                     "# Machines": t.required_count,
-                    "Due": t.due_time,
+                    "Due": f"{t.due.name} ({t.due_time}h)",
                     "Scheduled Start": sched.get("start", "-"),
                     "Scheduled End": sched.get("end", "-"),
                     "Late": sched.get("late", "-"),
