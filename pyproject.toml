@@ -22,4 +22,5 @@ build-backend = "poetry.core.masonry.api"
 ruff = "^0.12.11"
 pre-commit = "^4.3.0"
 ipykernel = "^6.30.1"
+pytest = "^8.4.2"
 
