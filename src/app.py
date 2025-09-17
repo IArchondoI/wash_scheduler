@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Wash Scheduler", layout="wide")
 st.title("Wash Scheduler")
 
-# Sidebar: Add machines
+
+# Sidebar: Add machines and scheduling horizon
 st.sidebar.header("Machines")
 machine_types = [e.value for e in MachineType]
 if "machines" not in st.session_state:
@@ -25,6 +26,14 @@ if st.sidebar.button("Add Iron"):
 st.sidebar.write("Current machines:")
 for m in st.session_state["machines"]:
     st.sidebar.write(f"{m.id}: {m.type.value}")
+
+# Sidebar: Scheduling horizon (number of days)
+if "num_days" not in st.session_state:
+    st.session_state["num_days"] = 1
+st.sidebar.write("")
+st.sidebar.header("Scheduling Horizon")
+num_days = st.sidebar.number_input("Number of days to schedule", min_value=1, value=st.session_state["num_days"])
+st.session_state["num_days"] = num_days
 
 # Main: Add tasks
 st.header("Tasks")
@@ -66,15 +75,32 @@ if st.button("Optimize & Visualize"):
     if not st.session_state["machines"] or not st.session_state["tasks"]:
         st.error("Please add at least one machine and one task.")
     else:
+        # Set horizon for all tasks (end of scheduling window)
+        horizon = int(st.session_state["num_days"]) * 24
+        for t in st.session_state["tasks"]:
+            t.due_time = min(t.due_time, horizon)
         context = Context(machines=st.session_state["machines"], tasks=st.session_state["tasks"])
+        import time
+        start_time = time.time()
         result = solve_scheduling_problem(context)
+        solve_time = time.time() - start_time
         if isinstance(result, dict):
             base_time = datetime(2025, 1, 1, 0, 0, 0)
             gantt_tasks = []
+            num_delayed = 0
             for task_id, info in result.items():
                 start = base_time + timedelta(hours=info["start"])
                 end = base_time + timedelta(hours=info["end"])
+                if info["late"] > 0:
+                    num_delayed += 1
                 gantt_tasks.append(dict(Task=task_id, Start=start, Finish=end, Resource="N/A"))
+            # Solution stats
+            st.subheader("Solution Stats")
+            st.write(f"**Solution value (total lateness):** {sum(info['late'] for info in result.values())}")
+            st.write(f"**Solution time:** {solve_time:.2f} seconds")
+            st.write(f"**Number of tasks scheduled:** {len(result)}")
+            st.write(f"**Number of tasks delayed:** {num_delayed}")
+            # Gantt chart
             fig = ff.create_gantt(
                 gantt_tasks,
                 index_col="Resource",
@@ -85,5 +111,24 @@ if st.button("Optimize & Visualize"):
                 title="Schedule (Start: Jan 1st, 2025, Task lengths in hours)",
             )
             st.plotly_chart(fig, use_container_width=True)
+            # Table of tasks
+            import pandas as pd
+            st.subheader("Task Schedule Table")
+            table_data = []
+            for t in st.session_state["tasks"]:
+                sched = result.get(t.id, {})
+                table_data.append({
+                    "TaskID": t.id,
+                    "Arrival": t.arrival_time,
+                    "Length": t.length,
+                    "Type": t.required_type.value,
+                    "# Machines": t.required_count,
+                    "Due": t.due_time,
+                    "Scheduled Start": sched.get("start", "-"),
+                    "Scheduled End": sched.get("end", "-"),
+                    "Late": sched.get("late", "-"),
+                })
+            df = pd.DataFrame(table_data)
+            st.dataframe(df, use_container_width=True)
         else:
             st.error("No feasible solution found.")

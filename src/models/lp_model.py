@@ -21,7 +21,11 @@ def create_scheduling_model(
     late_vars = {}
     assigned_vars = {}
     intervals_by_machine = {m.id: [] for m in machines}
-    horizon = max(t.due_time for t in tasks) + max(t.length for t in tasks)
+    # Use the maximum due_time as the default horizon, but allow for a custom horizon in context
+    if hasattr(context, 'horizon') and context.horizon is not None:
+        horizon = context.horizon
+    else:
+        horizon = max(t.due_time for t in tasks) + max(t.length for t in tasks)
     for t in tasks:
         start = model.NewIntVar(t.arrival_time, horizon, f"start_{t.id}")
         end = model.NewIntVar(t.arrival_time, horizon, f"end_{t.id}")
@@ -29,6 +33,7 @@ def create_scheduling_model(
         model.Add(end == start + t.length)
         model.Add(late >= end - t.due_time)
         model.Add(late >= 0)
+        model.Add(end <= horizon)  # Enforce that no task ends after the horizon
         start_vars[t.id] = start
         end_vars[t.id] = end
         late_vars[t.id] = late

@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from enum import Enum
 from ortools.sat.python.cp_model import IntVar
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Optional
+
 
 @dataclass
 class ModelVariables:
@@ -20,6 +21,7 @@ class ModelVariables:
 class Context:
     machines: List['WashingMachine']
     tasks: List['Task']
+    horizon: Optional[int] = None
 
 
 
