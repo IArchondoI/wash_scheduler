@@ -82,10 +82,19 @@ def extract_solution(
     result = {}
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         for t in tasks:
+            assigned_machine = None
+            # Find which machine this task was assigned to (first True in assigned_vars)
+            for idx, m in enumerate(variables.machines):
+                if m.type == t.required_type:
+                    assigned_list = variables.assigned_vars[t.id]
+                    if idx < len(assigned_list) and solver.Value(assigned_list[idx]):
+                        assigned_machine = m.id
+                        break
             result[t.id] = {
                 "start": solver.Value(start_vars[t.id]),
                 "end": solver.Value(end_vars[t.id]),
                 "late": solver.Value(late_vars[t.id]),
+                "machine": assigned_machine,
             }
     else:
         result = "No feasible solution found."

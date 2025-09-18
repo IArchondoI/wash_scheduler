@@ -117,7 +117,8 @@ if st.button("Optimize & Visualize"):
                 end = base_time + timedelta(hours=info["end"])
                 if info["late"] > 0:
                     num_delayed += 1
-                gantt_tasks.append(dict(Task=task_id, Start=start, Finish=end, Resource="N/A"))
+                machine = info.get("machine", "N/A")
+                gantt_tasks.append(dict(Task=machine, Start=start, Finish=end, Resource=task_id, Description=task_id))
             # Solution stats
             st.subheader("Solution Stats")
             st.write(f"**Solution value (total lateness):** {sum(info['late'] for info in result.values())}")
@@ -127,12 +128,12 @@ if st.button("Optimize & Visualize"):
             # Gantt chart
             fig = ff.create_gantt(
                 gantt_tasks,
-                index_col="Resource",
+                index_col="Task",  # Each row is a machine
                 show_colorbar=True,
                 group_tasks=True,
                 showgrid_x=True,
                 showgrid_y=True,
-                title="Schedule (Start: Jan 1st, 2025, Task lengths in hours)",
+                title="Schedule (Start: Jan 1st, 2025, Tasks as bars, Machines as rows)",
             )
             st.plotly_chart(fig, use_container_width=True)
             # Table of tasks

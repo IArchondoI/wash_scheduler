@@ -24,21 +24,20 @@ def visualize_gantt(
         filename = f"gantt_{run_id}.html"
     # All times are relative to Jan 1st, 2025, in hours
     base_time = datetime(2025, 1, 1, 0, 0, 0)
-    tasks = []
+    bars = []
     for task_id, info in schedule.items():
         start = base_time + timedelta(hours=info['start'])
         end = base_time + timedelta(hours=info['end'])
         machine = info.get('machine', 'N/A')
-        # Add TaskID as description for hover text
-        tasks.append(dict(Task=task_id, Start=start, Finish=end, Resource=machine, Description=task_id))
+        bars.append(dict(Task=machine, Start=start, Finish=end, Resource=task_id, Description=task_id))
     fig = ff.create_gantt(
-        tasks,
-        index_col='Resource',
+        bars,
+        index_col='Task',  # Each row is a machine
         show_colorbar=True,
         group_tasks=True,
         showgrid_x=True,
         showgrid_y=True,
-        title="Dry Clean Schedule (Start: Jan 1st, 2025, Task lengths in hours)",
+        title="Dry Clean Schedule (Start: Jan 1st, 2025, Tasks as bars, Machines as rows)",
         show_hover_fill=True,
         bar_width=0.4,
     )
