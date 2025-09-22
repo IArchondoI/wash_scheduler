@@ -118,7 +118,7 @@ if st.button("Optimize & Visualize"):
                 if info["late"] > 0:
                     num_delayed += 1
                 machine = info.get("machine", "N/A")
-                gantt_tasks.append(dict(Task=machine, Start=start, Finish=end, Resource=task_id, Description=task_id))
+                gantt_tasks.append(dict(Task=machine, Start=start, Finish=end, Resource=task_id, Description=f"Task ID: {task_id}"))
             # Solution stats
             st.subheader("Solution Stats")
             st.write(f"**Solution value (total lateness):** {sum(info['late'] for info in result.values())}")
@@ -140,8 +140,13 @@ if st.button("Optimize & Visualize"):
             import pandas as pd
             st.subheader("Task Schedule Table")
             table_data = []
+            base_time = datetime(2025, 1, 1, 0, 0, 0)
             for t in st.session_state["tasks"]:
                 sched = result.get(t.id, {})
+                start_val = sched.get("start", None)
+                end_val = sched.get("end", None)
+                start_time = (base_time + timedelta(hours=start_val)).strftime("%b %d %H:%M") if isinstance(start_val, (int, float)) else "-"
+                end_time = (base_time + timedelta(hours=end_val)).strftime("%b %d %H:%M") if isinstance(end_val, (int, float)) else "-"
                 table_data.append({
                     "TaskID": t.id,
                     "Arrival": t.arrival_time,
@@ -149,8 +154,8 @@ if st.button("Optimize & Visualize"):
                     "Type": t.required_type.value,
                     "# Machines": t.required_count,
                     "Due": f"{t.due.name} ({t.due_time}h)",
-                    "Scheduled Start": sched.get("start", "-"),
-                    "Scheduled End": sched.get("end", "-"),
+                    "Scheduled Start": start_time,
+                    "Scheduled End": end_time,
                     "Late": sched.get("late", "-"),
                 })
             df = pd.DataFrame(table_data)
